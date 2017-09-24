@@ -123,6 +123,36 @@ printstudyDoRequestOperationStatus(
     _In_ PFLT_CALLBACK_DATA Data
     );
 
+FLT_PREOP_CALLBACK_STATUS
+PreCloseOperationCallback(
+	_Inout_ PFLT_CALLBACK_DATA Data,
+	_In_ PCFLT_RELATED_OBJECTS FltObjects,
+	_Flt_CompletionContext_Outptr_ PVOID *CompletionContext
+	);
+
+FLT_POSTOP_CALLBACK_STATUS
+PostCloseOperationCallback(
+	_Inout_ PFLT_CALLBACK_DATA Data,
+	_In_ PCFLT_RELATED_OBJECTS FltObjects,
+	_In_opt_ PVOID CompletionContext,
+	_In_ FLT_POST_OPERATION_FLAGS Flags
+	);
+
+
+FLT_PREOP_CALLBACK_STATUS
+PreCleanupOperationCallback(
+	_Inout_ PFLT_CALLBACK_DATA Data,
+	_In_ PCFLT_RELATED_OBJECTS FltObjects,
+	_Flt_CompletionContext_Outptr_ PVOID *CompletionContext
+	);
+
+FLT_POSTOP_CALLBACK_STATUS
+PostCleanupOperationCallback(
+	_Inout_ PFLT_CALLBACK_DATA Data,
+	_In_ PCFLT_RELATED_OBJECTS FltObjects,
+	_In_opt_ PVOID CompletionContext,
+	_In_ FLT_POST_OPERATION_FLAGS Flags
+	);
 
 //
 //  Assign text sections for each routine.
@@ -154,13 +184,13 @@ CONST FLT_OPERATION_REGISTRATION Callbacks[] = {
 
 	  { IRP_MJ_CLOSE,
 	  0,
-	  printstudyPreOperation,
-	  printstudyPostOperation },
+	  PreCloseOperationCallback,
+	  PostCloseOperationCallback },
 
 	  { IRP_MJ_CLEANUP,
 	  0,
-	  printstudyPreOperation,
-	  printstudyPostOperation },
+	  PreCleanupOperationCallback,
+	  PostCleanupOperationCallback },
 
 #if 0 // TODO - List all of the requests to filter.
     { IRP_MJ_CREATE_NAMED_PIPE,
@@ -758,9 +788,85 @@ Return Value:
 }
 
 
+FLT_PREOP_CALLBACK_STATUS
+PreCloseOperationCallback(
+	_Inout_ PFLT_CALLBACK_DATA Data,
+	_In_ PCFLT_RELATED_OBJECTS FltObjects,
+	_Flt_CompletionContext_Outptr_ PVOID *CompletionContext
+)
+{
+	NTSTATUS status = STATUS_UNSUCCESSFUL;
+
+	UNREFERENCED_PARAMETER(Data);
+	UNREFERENCED_PARAMETER(FltObjects);
+	UNREFERENCED_PARAMETER(CompletionContext);
+
+	status = status;
+	//log_info "pre close" log_end;
+
+	return FLT_PREOP_SUCCESS_WITH_CALLBACK;
+}
+
+
+FLT_POSTOP_CALLBACK_STATUS
+PostCloseOperationCallback(
+	_Inout_ PFLT_CALLBACK_DATA Data,
+	_In_ PCFLT_RELATED_OBJECTS FltObjects,
+	_In_opt_ PVOID CompletionContext,
+	_In_ FLT_POST_OPERATION_FLAGS Flags
+)
+{
+	UNREFERENCED_PARAMETER(Data);
+	UNREFERENCED_PARAMETER(FltObjects);
+	UNREFERENCED_PARAMETER(CompletionContext);
+	UNREFERENCED_PARAMETER(Flags);
+
+	//log_info "post close" log_end;
+
+	return FLT_POSTOP_FINISHED_PROCESSING;
+}
+
+FLT_PREOP_CALLBACK_STATUS
+PreCleanupOperationCallback(
+	_Inout_ PFLT_CALLBACK_DATA Data,
+	_In_ PCFLT_RELATED_OBJECTS FltObjects,
+	_Flt_CompletionContext_Outptr_ PVOID *CompletionContext
+	)
+{
+	NTSTATUS status = STATUS_UNSUCCESSFUL;
+
+	UNREFERENCED_PARAMETER(Data);
+	UNREFERENCED_PARAMETER(FltObjects);
+	UNREFERENCED_PARAMETER(CompletionContext);
+
+	status = status;
+	//log_info "pre cleanup" log_end;
+
+	return FLT_PREOP_SUCCESS_WITH_CALLBACK;
+}
+
+
+FLT_POSTOP_CALLBACK_STATUS
+PostCleanupOperationCallback(
+	_Inout_ PFLT_CALLBACK_DATA Data,
+	_In_ PCFLT_RELATED_OBJECTS FltObjects,
+	_In_opt_ PVOID CompletionContext,
+	_In_ FLT_POST_OPERATION_FLAGS Flags
+	)
+{
+	UNREFERENCED_PARAMETER(Data);
+	UNREFERENCED_PARAMETER(FltObjects);
+	UNREFERENCED_PARAMETER(CompletionContext);
+	UNREFERENCED_PARAMETER(Flags);
+
+	//log_info "post cleanup" log_end;
+
+	return FLT_POSTOP_FINISHED_PROCESSING;
+}
+
 
 VOID
-printstudyOperationStatusCallback (
+printstudyOperationStatusCallback(
     _In_ PCFLT_RELATED_OBJECTS FltObjects,
     _In_ PFLT_IO_PARAMETER_BLOCK ParameterSnapshot,
     _In_ NTSTATUS OperationStatus,
