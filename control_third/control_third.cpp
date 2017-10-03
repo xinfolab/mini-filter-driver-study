@@ -1,8 +1,8 @@
-// control_first.cpp : Defines the entry point for the console application.
+// control_second.cpp : Defines the entry point for the console application.
 //
 
 #include "stdafx.h"
-#include "control_first.h"
+#include "control_third.h"
 #include "util.h"
 #include "service_control.h"
 
@@ -14,13 +14,13 @@ int main()
 	std::wstringstream driver_path;
 	driver_path << get_current_module_dirEx()
 		<< "\\"
-		<< first_study;
+		<< process_control;
 
 	service_control scm(driver_path.str().c_str(),
-						first_study_service,
-						first_study_service_display,
-						first_study_altitude,
-						first_study_flag,
+						third_study_service,
+						third_study_service_display,
+						third_study_altitude,
+						third_study_flag,
 						false);
 
 	//
@@ -32,7 +32,7 @@ int main()
 		return CONTROL_FAILED;
 	}
 
-	printf("%ws installed.\n", first_study_service);
+	printf("%ws installed.\n", third_study_service);
 	printf("Press any key to start...\n");
 	_pause;
 
@@ -42,11 +42,11 @@ int main()
 
 	if (true != scm.start_service())
 	{
-		printf( "scm.start_service() failed.\n" );;
+		printf("scm.start_service() failed.\n");;
 		return -1;
 	}
-	printf( "%ws started.\n", first_study_service);;
-	printf( "Press any key to stop...\n" );;
+	printf("%ws started.\n", third_study_service);;
+	printf("Press any key to stop...\n");;
 	_pause;
 
 	//
@@ -54,11 +54,11 @@ int main()
 	// 
 	if (true != scm.stop_service())
 	{
-		printf( "scm.stop_service() failed. \n" );;
+		printf("scm.stop_service() failed. \n");;
 		return -1;
 	}
-	printf( "%ws stopped.\n", first_study_service);;
-	printf( "Press any key to uninstall...\n" );;
+	printf("%ws stopped.\n", third_study_service);;
+	printf("Press any key to uninstall...\n");;
 	_pause;
 
 	//
@@ -66,13 +66,13 @@ int main()
 	// 
 	if (true != scm.uninstall_service())
 	{
-		printf( "scm.uninstall_service() failed. \n" );;
+		printf("scm.uninstall_service() failed. \n");;
 		return -1;
 	}
-	printf( "%ws uninstalled.\n", first_study_service);;
-	printf( "Press any key to finish...\n" );;
+	printf("%ws uninstalled.\n", third_study_service);;
+	printf("Press any key to finish...\n");;
 	_pause;
 
-    return 0;
+	return 0;
 }
 

@@ -2,11 +2,11 @@
 
 Module Name:
 
-    printstudy.c
+    processcontrol.c
 
 Abstract:
 
-    This is the main module of the print_study miniFilter driver.
+    This is the main module of the process_control miniFilter driver.
 
 Environment:
 
@@ -18,6 +18,7 @@ Environment:
 #include <dontuse.h>
 #include <suppress.h>
 #include "dbg_msg.h"
+#include "process_callback.h"
 
 #pragma prefast(disable:__WARNING_ENCODE_MEMBER_FUNCTION_POINTER, "Not valid for kernel mode drivers")
 
@@ -40,12 +41,6 @@ ULONG gTraceFlags = 0;
     Prototypes
 *************************************************************************/
 
-bool
-equal_tail_unicode_string(
-	_In_ const PUNICODE_STRING full,
-	_In_ const PUNICODE_STRING tail,
-	_In_ bool case_insensitive
-	);
 
 
 EXTERN_C_START
@@ -58,7 +53,7 @@ DriverEntry (
     );
 
 NTSTATUS
-printstudyInstanceSetup (
+processcontrolInstanceSetup (
     _In_ PCFLT_RELATED_OBJECTS FltObjects,
     _In_ FLT_INSTANCE_SETUP_FLAGS Flags,
     _In_ DEVICE_TYPE VolumeDeviceType,
@@ -66,37 +61,37 @@ printstudyInstanceSetup (
     );
 
 VOID
-printstudyInstanceTeardownStart (
+processcontrolInstanceTeardownStart (
     _In_ PCFLT_RELATED_OBJECTS FltObjects,
     _In_ FLT_INSTANCE_TEARDOWN_FLAGS Flags
     );
 
 VOID
-printstudyInstanceTeardownComplete (
+processcontrolInstanceTeardownComplete (
     _In_ PCFLT_RELATED_OBJECTS FltObjects,
     _In_ FLT_INSTANCE_TEARDOWN_FLAGS Flags
     );
 
 NTSTATUS
-printstudyUnload (
+processcontrolUnload (
     _In_ FLT_FILTER_UNLOAD_FLAGS Flags
     );
 
 NTSTATUS
-printstudyInstanceQueryTeardown (
+processcontrolInstanceQueryTeardown (
     _In_ PCFLT_RELATED_OBJECTS FltObjects,
     _In_ FLT_INSTANCE_QUERY_TEARDOWN_FLAGS Flags
     );
 
 FLT_PREOP_CALLBACK_STATUS
-printstudyPreOperation (
+processcontrolPreOperation (
     _Inout_ PFLT_CALLBACK_DATA Data,
     _In_ PCFLT_RELATED_OBJECTS FltObjects,
     _Flt_CompletionContext_Outptr_ PVOID *CompletionContext
     );
 
 VOID
-printstudyOperationStatusCallback (
+processcontrolOperationStatusCallback (
     _In_ PCFLT_RELATED_OBJECTS FltObjects,
     _In_ PFLT_IO_PARAMETER_BLOCK ParameterSnapshot,
     _In_ NTSTATUS OperationStatus,
@@ -104,7 +99,7 @@ printstudyOperationStatusCallback (
     );
 
 FLT_POSTOP_CALLBACK_STATUS
-printstudyPostOperation (
+processcontrolPostOperation (
     _Inout_ PFLT_CALLBACK_DATA Data,
     _In_ PCFLT_RELATED_OBJECTS FltObjects,
     _In_opt_ PVOID CompletionContext,
@@ -112,47 +107,18 @@ printstudyPostOperation (
     );
 
 FLT_PREOP_CALLBACK_STATUS
-printstudyPreOperationNoPostOperation (
+processcontrolPreOperationNoPostOperation (
     _Inout_ PFLT_CALLBACK_DATA Data,
     _In_ PCFLT_RELATED_OBJECTS FltObjects,
     _Flt_CompletionContext_Outptr_ PVOID *CompletionContext
     );
 
 BOOLEAN
-printstudyDoRequestOperationStatus(
+processcontrolDoRequestOperationStatus(
     _In_ PFLT_CALLBACK_DATA Data
     );
 
-FLT_PREOP_CALLBACK_STATUS
-PreCloseOperationCallback(
-	_Inout_ PFLT_CALLBACK_DATA Data,
-	_In_ PCFLT_RELATED_OBJECTS FltObjects,
-	_Flt_CompletionContext_Outptr_ PVOID *CompletionContext
-	);
-
-FLT_POSTOP_CALLBACK_STATUS
-PostCloseOperationCallback(
-	_Inout_ PFLT_CALLBACK_DATA Data,
-	_In_ PCFLT_RELATED_OBJECTS FltObjects,
-	_In_opt_ PVOID CompletionContext,
-	_In_ FLT_POST_OPERATION_FLAGS Flags
-	);
-
-
-FLT_PREOP_CALLBACK_STATUS
-PreCleanupOperationCallback(
-	_Inout_ PFLT_CALLBACK_DATA Data,
-	_In_ PCFLT_RELATED_OBJECTS FltObjects,
-	_Flt_CompletionContext_Outptr_ PVOID *CompletionContext
-	);
-
-FLT_POSTOP_CALLBACK_STATUS
-PostCleanupOperationCallback(
-	_Inout_ PFLT_CALLBACK_DATA Data,
-	_In_ PCFLT_RELATED_OBJECTS FltObjects,
-	_In_opt_ PVOID CompletionContext,
-	_In_ FLT_POST_OPERATION_FLAGS Flags
-	);
+EXTERN_C_END
 
 //
 //  Assign text sections for each routine.
@@ -160,15 +126,12 @@ PostCleanupOperationCallback(
 
 #ifdef ALLOC_PRAGMA
 #pragma alloc_text(INIT, DriverEntry)
-#pragma alloc_text(PAGE, printstudyUnload)
-#pragma alloc_text(PAGE, printstudyInstanceQueryTeardown)
-#pragma alloc_text(PAGE, printstudyInstanceSetup)
-#pragma alloc_text(PAGE, printstudyInstanceTeardownStart)
-#pragma alloc_text(PAGE, printstudyInstanceTeardownComplete)
+#pragma alloc_text(PAGE, processcontrolUnload)
+#pragma alloc_text(PAGE, processcontrolInstanceQueryTeardown)
+#pragma alloc_text(PAGE, processcontrolInstanceSetup)
+#pragma alloc_text(PAGE, processcontrolInstanceTeardownStart)
+#pragma alloc_text(PAGE, processcontrolInstanceTeardownComplete)
 #endif
-
-EXTERN_C_END
-
 
 //
 //  operation registration
@@ -176,206 +139,206 @@ EXTERN_C_END
 
 CONST FLT_OPERATION_REGISTRATION Callbacks[] = {
 
+#if 0 // TODO - List all of the requests to filter.
+	{ IRP_MJ_CREATE,
+	0,
+	processcontrolPreOperation,
+	processcontrolPostOperation },
 
     { IRP_MJ_CREATE,
       0,
-      printstudyPreOperation,
-      printstudyPostOperation },
+      processcontrolPreOperation,
+      processcontrolPostOperation },
 
-	  { IRP_MJ_CLOSE,
-	  0,
-	  PreCloseOperationCallback,
-	  PostCloseOperationCallback },
-
-	  { IRP_MJ_CLEANUP,
-	  0,
-	  PreCleanupOperationCallback,
-	  PostCleanupOperationCallback },
-
-#if 0 // TODO - List all of the requests to filter.
     { IRP_MJ_CREATE_NAMED_PIPE,
       0,
-      printstudyPreOperation,
-      printstudyPostOperation },
+      processcontrolPreOperation,
+      processcontrolPostOperation },
 
-
+    { IRP_MJ_CLOSE,
+      0,
+      processcontrolPreOperation,
+      processcontrolPostOperation },
 
     { IRP_MJ_READ,
       0,
-      printstudyPreOperation,
-      printstudyPostOperation },
+      processcontrolPreOperation,
+      processcontrolPostOperation },
 
     { IRP_MJ_WRITE,
       0,
-      printstudyPreOperation,
-      printstudyPostOperation },
+      processcontrolPreOperation,
+      processcontrolPostOperation },
 
     { IRP_MJ_QUERY_INFORMATION,
       0,
-      printstudyPreOperation,
-      printstudyPostOperation },
+      processcontrolPreOperation,
+      processcontrolPostOperation },
 
     { IRP_MJ_SET_INFORMATION,
       0,
-      printstudyPreOperation,
-      printstudyPostOperation },
+      processcontrolPreOperation,
+      processcontrolPostOperation },
 
     { IRP_MJ_QUERY_EA,
       0,
-      printstudyPreOperation,
-      printstudyPostOperation },
+      processcontrolPreOperation,
+      processcontrolPostOperation },
 
     { IRP_MJ_SET_EA,
       0,
-      printstudyPreOperation,
-      printstudyPostOperation },
+      processcontrolPreOperation,
+      processcontrolPostOperation },
 
     { IRP_MJ_FLUSH_BUFFERS,
       0,
-      printstudyPreOperation,
-      printstudyPostOperation },
+      processcontrolPreOperation,
+      processcontrolPostOperation },
 
     { IRP_MJ_QUERY_VOLUME_INFORMATION,
       0,
-      printstudyPreOperation,
-      printstudyPostOperation },
+      processcontrolPreOperation,
+      processcontrolPostOperation },
 
     { IRP_MJ_SET_VOLUME_INFORMATION,
       0,
-      printstudyPreOperation,
-      printstudyPostOperation },
+      processcontrolPreOperation,
+      processcontrolPostOperation },
 
     { IRP_MJ_DIRECTORY_CONTROL,
       0,
-      printstudyPreOperation,
-      printstudyPostOperation },
+      processcontrolPreOperation,
+      processcontrolPostOperation },
 
     { IRP_MJ_FILE_SYSTEM_CONTROL,
       0,
-      printstudyPreOperation,
-      printstudyPostOperation },
+      processcontrolPreOperation,
+      processcontrolPostOperation },
 
     { IRP_MJ_DEVICE_CONTROL,
       0,
-      printstudyPreOperation,
-      printstudyPostOperation },
+      processcontrolPreOperation,
+      processcontrolPostOperation },
 
     { IRP_MJ_INTERNAL_DEVICE_CONTROL,
       0,
-      printstudyPreOperation,
-      printstudyPostOperation },
+      processcontrolPreOperation,
+      processcontrolPostOperation },
 
     { IRP_MJ_SHUTDOWN,
       0,
-      printstudyPreOperationNoPostOperation,
+      processcontrolPreOperationNoPostOperation,
       NULL },                               //post operations not supported
 
     { IRP_MJ_LOCK_CONTROL,
       0,
-      printstudyPreOperation,
-      printstudyPostOperation },
+      processcontrolPreOperation,
+      processcontrolPostOperation },
 
-
+    { IRP_MJ_CLEANUP,
+      0,
+      processcontrolPreOperation,
+      processcontrolPostOperation },
 
     { IRP_MJ_CREATE_MAILSLOT,
       0,
-      printstudyPreOperation,
-      printstudyPostOperation },
+      processcontrolPreOperation,
+      processcontrolPostOperation },
 
     { IRP_MJ_QUERY_SECURITY,
       0,
-      printstudyPreOperation,
-      printstudyPostOperation },
+      processcontrolPreOperation,
+      processcontrolPostOperation },
 
     { IRP_MJ_SET_SECURITY,
       0,
-      printstudyPreOperation,
-      printstudyPostOperation },
+      processcontrolPreOperation,
+      processcontrolPostOperation },
 
     { IRP_MJ_QUERY_QUOTA,
       0,
-      printstudyPreOperation,
-      printstudyPostOperation },
+      processcontrolPreOperation,
+      processcontrolPostOperation },
 
     { IRP_MJ_SET_QUOTA,
       0,
-      printstudyPreOperation,
-      printstudyPostOperation },
+      processcontrolPreOperation,
+      processcontrolPostOperation },
 
     { IRP_MJ_PNP,
       0,
-      printstudyPreOperation,
-      printstudyPostOperation },
+      processcontrolPreOperation,
+      processcontrolPostOperation },
 
     { IRP_MJ_ACQUIRE_FOR_SECTION_SYNCHRONIZATION,
       0,
-      printstudyPreOperation,
-      printstudyPostOperation },
+      processcontrolPreOperation,
+      processcontrolPostOperation },
 
     { IRP_MJ_RELEASE_FOR_SECTION_SYNCHRONIZATION,
       0,
-      printstudyPreOperation,
-      printstudyPostOperation },
+      processcontrolPreOperation,
+      processcontrolPostOperation },
 
     { IRP_MJ_ACQUIRE_FOR_MOD_WRITE,
       0,
-      printstudyPreOperation,
-      printstudyPostOperation },
+      processcontrolPreOperation,
+      processcontrolPostOperation },
 
     { IRP_MJ_RELEASE_FOR_MOD_WRITE,
       0,
-      printstudyPreOperation,
-      printstudyPostOperation },
+      processcontrolPreOperation,
+      processcontrolPostOperation },
 
     { IRP_MJ_ACQUIRE_FOR_CC_FLUSH,
       0,
-      printstudyPreOperation,
-      printstudyPostOperation },
+      processcontrolPreOperation,
+      processcontrolPostOperation },
 
     { IRP_MJ_RELEASE_FOR_CC_FLUSH,
       0,
-      printstudyPreOperation,
-      printstudyPostOperation },
+      processcontrolPreOperation,
+      processcontrolPostOperation },
 
     { IRP_MJ_FAST_IO_CHECK_IF_POSSIBLE,
       0,
-      printstudyPreOperation,
-      printstudyPostOperation },
+      processcontrolPreOperation,
+      processcontrolPostOperation },
 
     { IRP_MJ_NETWORK_QUERY_OPEN,
       0,
-      printstudyPreOperation,
-      printstudyPostOperation },
+      processcontrolPreOperation,
+      processcontrolPostOperation },
 
     { IRP_MJ_MDL_READ,
       0,
-      printstudyPreOperation,
-      printstudyPostOperation },
+      processcontrolPreOperation,
+      processcontrolPostOperation },
 
     { IRP_MJ_MDL_READ_COMPLETE,
       0,
-      printstudyPreOperation,
-      printstudyPostOperation },
+      processcontrolPreOperation,
+      processcontrolPostOperation },
 
     { IRP_MJ_PREPARE_MDL_WRITE,
       0,
-      printstudyPreOperation,
-      printstudyPostOperation },
+      processcontrolPreOperation,
+      processcontrolPostOperation },
 
     { IRP_MJ_MDL_WRITE_COMPLETE,
       0,
-      printstudyPreOperation,
-      printstudyPostOperation },
+      processcontrolPreOperation,
+      processcontrolPostOperation },
 
     { IRP_MJ_VOLUME_MOUNT,
       0,
-      printstudyPreOperation,
-      printstudyPostOperation },
+      processcontrolPreOperation,
+      processcontrolPostOperation },
 
     { IRP_MJ_VOLUME_DISMOUNT,
       0,
-      printstudyPreOperation,
-      printstudyPostOperation },
+      processcontrolPreOperation,
+      processcontrolPostOperation },
 
 #endif // TODO
 
@@ -395,12 +358,12 @@ CONST FLT_REGISTRATION FilterRegistration = {
     NULL,                               //  Context
     Callbacks,                          //  Operation callbacks
 
-    printstudyUnload,                           //  MiniFilterUnload
+    processcontrolUnload,                           //  MiniFilterUnload
 
-    printstudyInstanceSetup,                    //  InstanceSetup
-    printstudyInstanceQueryTeardown,            //  InstanceQueryTeardown
-    printstudyInstanceTeardownStart,            //  InstanceTeardownStart
-    printstudyInstanceTeardownComplete,         //  InstanceTeardownComplete
+    processcontrolInstanceSetup,                    //  InstanceSetup
+    processcontrolInstanceQueryTeardown,            //  InstanceQueryTeardown
+    processcontrolInstanceTeardownStart,            //  InstanceTeardownStart
+    processcontrolInstanceTeardownComplete,         //  InstanceTeardownComplete
 
     NULL,                               //  GenerateFileName
     NULL,                               //  GenerateDestinationFileName
@@ -411,7 +374,7 @@ CONST FLT_REGISTRATION FilterRegistration = {
 
 
 NTSTATUS
-printstudyInstanceSetup (
+processcontrolInstanceSetup (
     _In_ PCFLT_RELATED_OBJECTS FltObjects,
     _In_ FLT_INSTANCE_SETUP_FLAGS Flags,
     _In_ DEVICE_TYPE VolumeDeviceType,
@@ -449,14 +412,14 @@ Return Value:
     PAGED_CODE();
 
     PT_DBG_PRINT( PTDBG_TRACE_ROUTINES,
-                  ("printstudy!printstudyInstanceSetup: Entered\n") );
+                  ("processcontrol!processcontrolInstanceSetup: Entered\n") );
 
     return STATUS_SUCCESS;
 }
 
 
 NTSTATUS
-printstudyInstanceQueryTeardown (
+processcontrolInstanceQueryTeardown (
     _In_ PCFLT_RELATED_OBJECTS FltObjects,
     _In_ FLT_INSTANCE_QUERY_TEARDOWN_FLAGS Flags
     )
@@ -491,14 +454,14 @@ Return Value:
     PAGED_CODE();
 
     PT_DBG_PRINT( PTDBG_TRACE_ROUTINES,
-                  ("printstudy!printstudyInstanceQueryTeardown: Entered\n") );
+                  ("processcontrol!processcontrolInstanceQueryTeardown: Entered\n") );
 
     return STATUS_SUCCESS;
 }
 
 
 VOID
-printstudyInstanceTeardownStart (
+processcontrolInstanceTeardownStart (
     _In_ PCFLT_RELATED_OBJECTS FltObjects,
     _In_ FLT_INSTANCE_TEARDOWN_FLAGS Flags
     )
@@ -527,12 +490,12 @@ Return Value:
     PAGED_CODE();
 
     PT_DBG_PRINT( PTDBG_TRACE_ROUTINES,
-                  ("printstudy!printstudyInstanceTeardownStart: Entered\n") );
+                  ("processcontrol!processcontrolInstanceTeardownStart: Entered\n") );
 }
 
 
 VOID
-printstudyInstanceTeardownComplete (
+processcontrolInstanceTeardownComplete (
     _In_ PCFLT_RELATED_OBJECTS FltObjects,
     _In_ FLT_INSTANCE_TEARDOWN_FLAGS Flags
     )
@@ -561,7 +524,7 @@ Return Value:
     PAGED_CODE();
 
     PT_DBG_PRINT( PTDBG_TRACE_ROUTINES,
-                  ("printstudy!printstudyInstanceTeardownComplete: Entered\n") );
+                  ("processcontrol!processcontrolInstanceTeardownComplete: Entered\n") );
 }
 
 
@@ -600,15 +563,7 @@ Return Value:
     UNREFERENCED_PARAMETER( RegistryPath );
 
     PT_DBG_PRINT( PTDBG_TRACE_ROUTINES,
-                  ("printstudy!DriverEntry: Entered\n") );
-
-#ifdef _DEBUG
-	PT_DBG_PRINT(PTDBG_TRACE_ROUTINES, (
-		"\n===============================================================================\n"\
-		"Compiled at %s on %s \n"\
-		"===============================================================================\n",
-		__TIME__, __DATE__));
-#endif 
+                  ("processcontrol!DriverEntry: Entered\n") );
 
 	//
 	//	반드시 DriverEntry 에서 호출해주어야 log_xxx 매크로를 사용할 수 있다. 
@@ -618,8 +573,19 @@ Return Value:
 		PT_DBG_PRINT(PTDBG_TRACE_ROUTINES, ("holfilter!DriverEntry: SetProcessNameOffset() failed.\n"));
 		return STATUS_UNSUCCESSFUL;
 	}
-	
 
+	//
+	//	프로세스 콜백 등록
+	//
+
+	status = StartProcessCallback();
+	if (!NT_SUCCESS(status))
+	{
+		log_err "StartProcessCallback() failed. status=0x%08x",
+			status
+			log_end;
+		return status;
+	}
 
 
     //
@@ -650,7 +616,7 @@ Return Value:
 }
 
 NTSTATUS
-printstudyUnload (
+processcontrolUnload (
     _In_ FLT_FILTER_UNLOAD_FLAGS Flags
     )
 /*++
@@ -677,8 +643,9 @@ Return Value:
     PAGED_CODE();
 
     PT_DBG_PRINT( PTDBG_TRACE_ROUTINES,
-                  ("printstudy!printstudyUnload: Entered\n") );
+                  ("processcontrol!processcontrolUnload: Entered\n") );
 
+	StopProcessCallback();
     FltUnregisterFilter( gFilterHandle );
 
     return STATUS_SUCCESS;
@@ -689,7 +656,7 @@ Return Value:
     MiniFilter callback routines.
 *************************************************************************/
 FLT_PREOP_CALLBACK_STATUS
-printstudyPreOperation (
+processcontrolPreOperation (
     _Inout_ PFLT_CALLBACK_DATA Data,
     _In_ PCFLT_RELATED_OBJECTS FltObjects,
     _Flt_CompletionContext_Outptr_ PVOID *CompletionContext
@@ -719,157 +686,47 @@ Return Value:
 
 --*/
 {
-	PAGED_CODE();
-	UNREFERENCED_PARAMETER(Data);
-	UNREFERENCED_PARAMETER(FltObjects);
-	UNREFERENCED_PARAMETER(CompletionContext);
+    NTSTATUS status;
 
-	// 
-	//	I/O 대상 파일명을 구한다.
-	// 
-	//
-	PFLT_FILE_NAME_INFORMATION FileNameInfo = NULL;
-	NTSTATUS status = FltGetFileNameInformation(Data,
-												FLT_FILE_NAME_NORMALIZED | FLT_FILE_NAME_QUERY_DEFAULT,
-												&FileNameInfo);
-	if (!NT_SUCCESS(status))
-	{
-		log_err "FltGetFileNameInformation() failed. status=0x%08x",
-			status
-			log_end;
+    UNREFERENCED_PARAMETER( FltObjects );
+    UNREFERENCED_PARAMETER( CompletionContext );
 
-		ASSERT(NULL == FileNameInfo);
-		return FLT_PREOP_SUCCESS_NO_CALLBACK;
-	}
+    PT_DBG_PRINT( PTDBG_TRACE_ROUTINES,
+                  ("processcontrol!processcontrolPreOperation: Entered\n") );
 
-	//
-	//	FltParseFileNameInformation 는 MSDN을 꼭 봐요~~
-	//	여기서는 나름 중요합니다~
-	//
-	status = FltParseFileNameInformation(FileNameInfo);
-	if (!NT_SUCCESS(status))
-	{
-		log_err "FltParseFileNameInformation() failed. status=0x%08x",
-			status
-			log_end;
+    //
+    //  See if this is an operation we would like the operation status
+    //  for.  If so request it.
+    //
+    //  NOTE: most filters do NOT need to do this.  You only need to make
+    //        this call if, for example, you need to know if the oplock was
+    //        actually granted.
+    //
 
-		FltReleaseFileNameInformation(FileNameInfo);
-		return FLT_PREOP_SUCCESS_NO_CALLBACK;
-	}
+    if (processcontrolDoRequestOperationStatus( Data )) {
 
-	//
-	//	파일명 비교
-	//	드라이버에선 문자열 쓰는 것도 유저 모드와 다릅니다.
-	//
-	FLT_PREOP_CALLBACK_STATUS ret = FLT_PREOP_SUCCESS_WITH_CALLBACK;
-	UNICODE_STRING txt_file;
-	RtlInitUnicodeString(&txt_file, L".txt");
-	if (true == equal_tail_unicode_string(&FileNameInfo->Name, &txt_file, true))
-	{
-		//
-		//	matched
-		// 
-		Data->IoStatus.Status = STATUS_ACCESS_DENIED;
-		Data->IoStatus.Information = 0;
+        status = FltRequestOperationStatusCallback( Data,
+                                                    processcontrolOperationStatusCallback,
+                                                    (PVOID)(++OperationStatusCtx) );
+        if (!NT_SUCCESS(status)) {
 
-		log_info
-			"Denied, FileName=%wZ",
-			&FileNameInfo->Name
-			log_end;
+            PT_DBG_PRINT( PTDBG_TRACE_OPERATION_STATUS,
+                          ("processcontrol!processcontrolPreOperation: FltRequestOperationStatusCallback Failed, status=%08x\n",
+                           status) );
+        }
+    }
 
+    // This template code does not do anything with the callbackData, but
+    // rather returns FLT_PREOP_SUCCESS_WITH_CALLBACK.
+    // This passes the request down to the next miniFilter in the chain.
 
-		ret = FLT_PREOP_COMPLETE;
-	}
-	else
-	{
-		//log_info "hello :)" log_end;
-	}
-
-	//todo!!!
-	//FltReleaseFileNameInformation(FileNameInfo);
-	return ret;
+    return FLT_PREOP_SUCCESS_WITH_CALLBACK;
 }
 
-
-FLT_PREOP_CALLBACK_STATUS
-PreCloseOperationCallback(
-	_Inout_ PFLT_CALLBACK_DATA Data,
-	_In_ PCFLT_RELATED_OBJECTS FltObjects,
-	_Flt_CompletionContext_Outptr_ PVOID *CompletionContext
-)
-{
-	NTSTATUS status = STATUS_UNSUCCESSFUL;
-
-	UNREFERENCED_PARAMETER(Data);
-	UNREFERENCED_PARAMETER(FltObjects);
-	UNREFERENCED_PARAMETER(CompletionContext);
-
-	status = status;
-	//log_info "pre close" log_end;
-
-	return FLT_PREOP_SUCCESS_WITH_CALLBACK;
-}
-
-
-FLT_POSTOP_CALLBACK_STATUS
-PostCloseOperationCallback(
-	_Inout_ PFLT_CALLBACK_DATA Data,
-	_In_ PCFLT_RELATED_OBJECTS FltObjects,
-	_In_opt_ PVOID CompletionContext,
-	_In_ FLT_POST_OPERATION_FLAGS Flags
-)
-{
-	UNREFERENCED_PARAMETER(Data);
-	UNREFERENCED_PARAMETER(FltObjects);
-	UNREFERENCED_PARAMETER(CompletionContext);
-	UNREFERENCED_PARAMETER(Flags);
-
-	//log_info "post close" log_end;
-
-	return FLT_POSTOP_FINISHED_PROCESSING;
-}
-
-FLT_PREOP_CALLBACK_STATUS
-PreCleanupOperationCallback(
-	_Inout_ PFLT_CALLBACK_DATA Data,
-	_In_ PCFLT_RELATED_OBJECTS FltObjects,
-	_Flt_CompletionContext_Outptr_ PVOID *CompletionContext
-	)
-{
-	NTSTATUS status = STATUS_UNSUCCESSFUL;
-
-	UNREFERENCED_PARAMETER(Data);
-	UNREFERENCED_PARAMETER(FltObjects);
-	UNREFERENCED_PARAMETER(CompletionContext);
-
-	status = status;
-	//log_info "pre cleanup" log_end;
-
-	return FLT_PREOP_SUCCESS_WITH_CALLBACK;
-}
-
-
-FLT_POSTOP_CALLBACK_STATUS
-PostCleanupOperationCallback(
-	_Inout_ PFLT_CALLBACK_DATA Data,
-	_In_ PCFLT_RELATED_OBJECTS FltObjects,
-	_In_opt_ PVOID CompletionContext,
-	_In_ FLT_POST_OPERATION_FLAGS Flags
-	)
-{
-	UNREFERENCED_PARAMETER(Data);
-	UNREFERENCED_PARAMETER(FltObjects);
-	UNREFERENCED_PARAMETER(CompletionContext);
-	UNREFERENCED_PARAMETER(Flags);
-
-	//log_info "post cleanup" log_end;
-
-	return FLT_POSTOP_FINISHED_PROCESSING;
-}
 
 
 VOID
-printstudyOperationStatusCallback(
+processcontrolOperationStatusCallback (
     _In_ PCFLT_RELATED_OBJECTS FltObjects,
     _In_ PFLT_IO_PARAMETER_BLOCK ParameterSnapshot,
     _In_ NTSTATUS OperationStatus,
@@ -911,10 +768,10 @@ Return Value:
     UNREFERENCED_PARAMETER( FltObjects );
 
     PT_DBG_PRINT( PTDBG_TRACE_ROUTINES,
-                  ("printstudy!printstudyOperationStatusCallback: Entered\n") );
+                  ("processcontrol!processcontrolOperationStatusCallback: Entered\n") );
 
     PT_DBG_PRINT( PTDBG_TRACE_OPERATION_STATUS,
-                  ("printstudy!printstudyOperationStatusCallback: Status=%08x ctx=%p IrpMj=%02x.%02x \"%s\"\n",
+                  ("processcontrol!processcontrolOperationStatusCallback: Status=%08x ctx=%p IrpMj=%02x.%02x \"%s\"\n",
                    OperationStatus,
                    RequesterContext,
                    ParameterSnapshot->MajorFunction,
@@ -924,7 +781,7 @@ Return Value:
 
 
 FLT_POSTOP_CALLBACK_STATUS
-printstudyPostOperation (
+processcontrolPostOperation (
     _Inout_ PFLT_CALLBACK_DATA Data,
     _In_ PCFLT_RELATED_OBJECTS FltObjects,
     _In_opt_ PVOID CompletionContext,
@@ -963,14 +820,14 @@ Return Value:
     UNREFERENCED_PARAMETER( Flags );
 
     PT_DBG_PRINT( PTDBG_TRACE_ROUTINES,
-                  ("printstudy!printstudyPostOperation: Entered\n") );
+                  ("processcontrol!processcontrolPostOperation: Entered\n") );
 
     return FLT_POSTOP_FINISHED_PROCESSING;
 }
 
 
 FLT_PREOP_CALLBACK_STATUS
-printstudyPreOperationNoPostOperation (
+processcontrolPreOperationNoPostOperation (
     _Inout_ PFLT_CALLBACK_DATA Data,
     _In_ PCFLT_RELATED_OBJECTS FltObjects,
     _Flt_CompletionContext_Outptr_ PVOID *CompletionContext
@@ -1005,7 +862,7 @@ Return Value:
     UNREFERENCED_PARAMETER( CompletionContext );
 
     PT_DBG_PRINT( PTDBG_TRACE_ROUTINES,
-                  ("printstudy!printstudyPreOperationNoPostOperation: Entered\n") );
+                  ("processcontrol!processcontrolPreOperationNoPostOperation: Entered\n") );
 
     // This template code does not do anything with the callbackData, but
     // rather returns FLT_PREOP_SUCCESS_NO_CALLBACK.
@@ -1016,7 +873,7 @@ Return Value:
 
 
 BOOLEAN
-printstudyDoRequestOperationStatus(
+processcontrolDoRequestOperationStatus(
     _In_ PFLT_CALLBACK_DATA Data
     )
 /*++
@@ -1063,55 +920,4 @@ Return Value:
               ((iopb->MajorFunction == IRP_MJ_DIRECTORY_CONTROL) &&
                (iopb->MinorFunction == IRP_MN_NOTIFY_CHANGE_DIRECTORY))
              );
-}
-
-
-
-/// @brief	full: ABCDEFGHIJKLMNOPQ
-///			tail :            MNOPQ
-///				                  ^
-///				                 ^
-///				                ^
-///				               ^
-///				              ^
-///							 순서로 문자열을 비교하고, 
-///			문자열이 매칭되면 true 를 리턴한다.
-bool
-equal_tail_unicode_string(
-	_In_ const PUNICODE_STRING full,
-	_In_ const PUNICODE_STRING tail,
-	_In_ bool case_insensitive
-	)
-{
-	ULONG i;
-	USHORT full_count;
-	USHORT tail_count;
-
-	if (full == NULL || tail == NULL) return false;
-
-	full_count = full->Length / sizeof(WCHAR);
-	tail_count = tail->Length / sizeof(WCHAR);
-
-	if (full_count < tail_count) return false;
-	if (tail_count == 0) return false;
-
-	if (case_insensitive)
-	{
-		for (i = 1; i <= tail_count; ++i)
-		{
-			if (RtlUpcaseUnicodeChar(full->Buffer[full_count - i]) !=
-				RtlUpcaseUnicodeChar(tail->Buffer[tail_count - i]))
-				return false;
-		}
-	}
-	else
-	{
-		for (i = 1; i <= tail_count; ++i)
-		{
-			if (full->Buffer[full_count - i] != tail->Buffer[tail_count - i])
-				return false;
-		}
-	}
-
-	return true;
 }

@@ -4,7 +4,7 @@
 #include "stdafx.h"
 #include "control_second.h"
 #include "util.h"
-#include "../control_second/service_control.h"
+#include "service_control.h"
 
 #define CONTROL_FAILED -1
 #define _pause _getch()
